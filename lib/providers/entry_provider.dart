@@ -69,8 +69,8 @@ class EntryProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> deleteEntry(int index) async {
-    await _dbService.deleteEntry(index);
+  Future<void> deleteEntry(PendingEntry entry) async {
+    await _dbService.deleteEntry(entry);
     _entries = _dbService.getAllEntries();
     _hapticService.selection();
     notifyListeners();
@@ -87,13 +87,8 @@ class EntryProvider with ChangeNotifier {
       
       // Remove synced entries from local database
       final box = _dbService.pendingEntriesBox;
-      final entriesToDelete = List<PendingEntry>.from(_entries);
-      
-      for (var entry in entriesToDelete) {
-        final index = box.values.toList().indexOf(entry);
-        if (index != -1) {
-          await box.deleteAt(index);
-        }
+      for (var entry in _entries) {
+        await box.delete(entry.key);
       }
       _entries = _dbService.getAllEntries();
       _hapticService.success();

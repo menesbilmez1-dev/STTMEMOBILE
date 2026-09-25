@@ -98,7 +98,7 @@ class PendingEntriesScreen extends StatelessWidget {
                   isThreeLine: true,
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => entryProvider.deleteEntry(index),
+                    onPressed: () => entryProvider.deleteEntry(entry),
                   ),
                 );
               },
@@ -109,4 +109,3 @@ class PendingEntriesScreen extends StatelessWidget {
     );
   }
 }
-

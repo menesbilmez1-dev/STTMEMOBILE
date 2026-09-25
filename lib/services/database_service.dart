@@ -12,7 +12,7 @@ class DatabaseService {
     Hive.registerAdapter(PendingEntryAdapter());
     Hive.registerAdapter(AppConfigAdapter());
     Hive.registerAdapter(CategoryConfigAdapter());
-    
+
     await Hive.openBox<PendingEntry>(pendingEntriesBoxName);
     await Hive.openBox<AppConfig>(appConfigBoxName);
     await Hive.openBox(settingsBoxName);
@@ -31,8 +31,8 @@ class DatabaseService {
     return pendingEntriesBox.values.toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
   }
 
-  Future<void> deleteEntry(int index) async {
-    await pendingEntriesBox.deleteAt(index);
+  Future<void> deleteEntry(PendingEntry entry) async {
+    await pendingEntriesBox.delete(entry.key);
   }
 
   // App Config Operations
