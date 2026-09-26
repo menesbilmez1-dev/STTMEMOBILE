@@ -76,6 +76,13 @@ class EntryProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateEntry(PendingEntry entry) async {
+    await _dbService.updateEntry(entry);
+    _entries = _dbService.getAllEntries();
+    _hapticService.success();
+    notifyListeners();
+  }
+
   Future<void> syncEntries() async {
     if (_entries.isEmpty) return;
 

@@ -4,6 +4,9 @@ import 'package:intl/intl.dart';
 import '../providers/entry_provider.dart';
 import '../services/api_service.dart';
 import '../l10n/app_localizations.dart';
+import '../widgets/entry_editor_sheet.dart';
+import '../models/pending_entry.dart';
+
 
 class PendingEntriesScreen extends StatelessWidget {
   const PendingEntriesScreen({super.key});
@@ -13,6 +16,17 @@ class PendingEntriesScreen extends StatelessWidget {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showEntryEditorSheet(BuildContext context, {PendingEntry? entry}) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => EntryEditorSheet(
+        initialValue: entry?.value ?? '',
+        entry: entry,
       ),
     );
   }
@@ -96,6 +110,7 @@ class PendingEntriesScreen extends StatelessWidget {
                     ],
                   ),
                   isThreeLine: true,
+                  onTap: () => _showEntryEditorSheet(context, entry: entry),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete, color: Colors.red),
                     onPressed: () => entryProvider.deleteEntry(entry),
@@ -103,6 +118,10 @@ class PendingEntriesScreen extends StatelessWidget {
                 );
               },
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showEntryEditorSheet(context),
+        child: const Icon(Icons.add),
+      ),
       bottomNavigationBar: entryProvider.isSyncing
           ? const LinearProgressIndicator()
           : null,

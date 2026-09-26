@@ -34,6 +34,10 @@ class DatabaseService {
   Future<void> deleteEntry(PendingEntry entry) async {
     await pendingEntriesBox.delete(entry.key);
   }
+  Future<void> updateEntry(PendingEntry entry) async {
+    await pendingEntriesBox.put(entry.key, entry);
+  }
+
 
   // App Config Operations
   Future<void> saveConfig(AppConfig config) async {
