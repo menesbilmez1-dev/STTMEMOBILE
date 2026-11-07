@@ -1,30 +1,74 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
-import 'package:stt_merve/main.dart';
+import 'package:stt_merve/l10n/app_localizations.dart';
+import 'package:stt_merve/models/app_config.dart';
+import 'package:stt_merve/providers/entry_provider.dart';
+import 'package:stt_merve/screens/settings_screen.dart';
+import 'package:stt_merve/services/api_service.dart';
+import 'package:stt_merve/services/database_service.dart';
+import 'package:stt_merve/services/haptic_service.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('settings fetches and saves the server configuration', (
+    tester,
+  ) async {
+    final apiService = _FakeApiService();
+    final databaseService = _FakeDatabaseService();
+    final entryProvider = EntryProvider(
+      databaseService,
+      apiService,
+      _FakeHapticService(),
+    );
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<EntryProvider>.value(
+        value: entryProvider,
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const SettingsScreen(),
+        ),
+      ),
+    );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await tester.tap(find.text('Fetch Configuration'));
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(apiService.fetchCount, 1);
+    expect(databaseService.savedConfig?.categories.single.name, 'Sales');
+    expect(find.text('Configuration updated'), findsOneWidget);
   });
+}
+
+class _FakeApiService extends ApiService {
+  _FakeApiService() : super(baseUrl: 'http://localhost:8080');
+
+  int fetchCount = 0;
+
+  @override
+  Future<AppConfig> fetchLatestConfig() async {
+    fetchCount++;
+    return AppConfig(
+      categories: [
+        CategoryConfig(name: 'Sales', types: ['Cash']),
+      ],
+    );
+  }
+}
+
+class _FakeDatabaseService extends DatabaseService {
+  AppConfig? savedConfig;
+
+  @override
+  Future<void> updateConfig(AppConfig config) async {
+    savedConfig = config;
+  }
+}
+
+class _FakeHapticService extends HapticService {
+  @override
+  void success() {}
 }

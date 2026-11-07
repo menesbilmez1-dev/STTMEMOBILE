@@ -179,7 +179,7 @@ abstract class AppLocalizations {
   /// No description provided for @serverConnectionDesc.
   ///
   /// In en, this message translates to:
-  /// **'Enter the Command Center server address here (e.g., http://192.168.1.100:5000)'**
+  /// **'Enter the Command Center server address here (e.g., http://192.168.1.100:8080)'**
   String get serverConnectionDesc;
 
   /// No description provided for @serverUrlLabel.
@@ -191,7 +191,7 @@ abstract class AppLocalizations {
   /// No description provided for @serverUrlHint.
   ///
   /// In en, this message translates to:
-  /// **'http://192.168.1.100:5000'**
+  /// **'http://192.168.1.100:8080'**
   String get serverUrlHint;
 
   /// No description provided for @testAndSaveButton.
@@ -253,6 +253,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'An error occurred while updating configuration.'**
   String get configUpdateError;
+
+  /// No description provided for @configUpdateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Fetch Configuration'**
+  String get configUpdateButton;
 
   /// No description provided for @noEntriesFound.
   ///
@@ -367,6 +373,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Allowed Types:'**
   String get allowedTypesLabel;
+
+  /// No description provided for @reviewSpeechDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Review speech draft'**
+  String get reviewSpeechDraft;
+
+  /// No description provided for @addCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Add command'**
+  String get addCommand;
+
+  /// No description provided for @removeCommand.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove command'**
+  String get removeCommand;
+
+  /// No description provided for @saveReviewedBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Save reviewed batch'**
+  String get saveReviewedBatch;
+
+  /// No description provided for @transcriptLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recognized speech'**
+  String get transcriptLabel;
+
+  /// No description provided for @unparsedTranscript.
+  ///
+  /// In en, this message translates to:
+  /// **'No commands were recognized. Correct or add commands before saving.'**
+  String get unparsedTranscript;
+
+  /// No description provided for @mustHaveTwoCommands.
+  ///
+  /// In en, this message translates to:
+  /// **'A speech record must contain at least two commands.'**
+  String get mustHaveTwoCommands;
+
+  /// No description provided for @invalidCommandBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Commands must use configured category/type pairs, have values, and target different columns.'**
+  String get invalidCommandBatch;
+
+  /// No description provided for @reviewSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'The reviewed draft could not be saved. Please try again.'**
+  String get reviewSaveError;
+
+  /// No description provided for @awaitingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs review'**
+  String get awaitingReview;
+
+  /// No description provided for @draftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Speech saved as a draft. Review it before syncing.'**
+  String get draftSaved;
+
+  /// No description provided for @syncCompletedWithDrafts.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved entries synced. Speech drafts still need review.'**
+  String get syncCompletedWithDrafts;
+
+  /// No description provided for @emptyCategoryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'(No category)'**
+  String get emptyCategoryLabel;
 }
 
 class _AppLocalizationsDelegate

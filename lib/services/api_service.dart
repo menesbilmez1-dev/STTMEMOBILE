@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
+
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+
 import 'package:http/http.dart' as http;
+
 import '../models/pending_entry.dart';
 import '../models/app_config.dart';
 
@@ -54,23 +57,43 @@ class ApiService {
   Future<void> sendEntries(List<PendingEntry> entries) async {
     if (entries.isEmpty) return;
 
-    try {
-      final List<Map<String, dynamic>> payloadList = entries.map((entry) => {
-        'category': entry.category,
-        'type': entry.type,
-        'value': entry.value,
-      }).toList();
+    final batchIds = entries.map((entry) => entry.batchId).toSet();
+    if (batchIds.length != 1) {
+      throw ApiException(
+        'Each request must contain exactly one command batch.',
+      );
+    }
 
-      final response = await http.post(
-        _getUri('/command'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payloadList),
-      ).timeout(const Duration(seconds: 10));
+    try {
+      final List<Map<String, dynamic>> payloadList = entries
+          .map(
+            (entry) => {
+              'category': entry.category,
+              'type': entry.type,
+              'value': entry.value,
+              'batchId': entry.batchId,
+            },
+          )
+          .toList();
+
+      final response = await http
+          .post(
+            _getUri('/command'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payloadList),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         return;
       } else {
-        throw ServerException(response.statusCode, 'Failed to send entries. Server responded with ${response.statusCode}');
+        throw ServerException(
+          response.statusCode,
+          _responseErrorMessage(
+            response.body,
+            'Failed to send entries. Server responded with ${response.statusCode}',
+          ),
+        );
       }
     } on SocketException catch (e) {
       debugPrint('Network error sending entries: $e');
@@ -86,18 +109,34 @@ class ApiService {
     }
   }
 
+  String _responseErrorMessage(String body, String fallback) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic> && decoded['message'] is String) {
+        return decoded['message'] as String;
+      }
+    } on FormatException {
+      return fallback;
+    }
+    return fallback;
+  }
+
   Future<AppConfig> fetchLatestConfig() async {
     try {
-      final response = await http.get(_getUri('/config')).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(_getUri('/config'))
+          .timeout(const Duration(seconds: 10));
       debugPrint('Response body: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         try {
           final Map<String, dynamic> data = jsonDecode(response.body);
-          
+
           final categoriesData = data['Categories'] ?? data['categories'];
           if (categoriesData == null) {
-            throw DataFormatException('Missing "Categories" in configuration data.');
+            throw DataFormatException(
+              'Missing "Categories" in configuration data.',
+            );
           }
 
           final categories = (categoriesData as List).map((cat) {
@@ -106,13 +145,16 @@ class ApiService {
               types: List<String>.from(cat['Types'] ?? cat['types'] ?? []),
             );
           }).toList();
-          
+
           return AppConfig(categories: categories);
         } catch (e) {
           throw DataFormatException('Failed to parse configuration data: $e');
         }
       } else {
-        throw ServerException(response.statusCode, 'Failed to fetch config. Server responded with ${response.statusCode}');
+        throw ServerException(
+          response.statusCode,
+          'Failed to fetch config. Server responded with ${response.statusCode}',
+        );
       }
     } on SocketException catch (e) {
       debugPrint('Network error fetching config: $e');
@@ -132,11 +174,16 @@ class ApiService {
     final targetUrl = url ?? _baseUrl;
     final sanitizedTarget = _sanitizeUrl(targetUrl);
     try {
-      final response = await http.get(Uri.parse('$sanitizedTarget/config')).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(Uri.parse('$sanitizedTarget/config'))
+          .timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         return;
       } else {
-        throw ServerException(response.statusCode, 'Connection test failed. Server responded with ${response.statusCode}');
+        throw ServerException(
+          response.statusCode,
+          'Connection test failed. Server responded with ${response.statusCode}',
+        );
       }
     } on SocketException catch (e) {
       debugPrint('Network error during connection test: $e');

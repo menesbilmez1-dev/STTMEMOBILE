@@ -22,13 +22,16 @@ class PendingEntryAdapter extends TypeAdapter<PendingEntry> {
       type: fields[2] as String,
       value: fields[3] as String,
       timestamp: fields[4] as DateTime,
+      batchId: fields[5] as String?,
+      sourceTranscript: fields[6] == null ? '' : fields[6] as String,
+      isReviewed: fields[7] == null ? true : fields[7] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, PendingEntry obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,7 +41,13 @@ class PendingEntryAdapter extends TypeAdapter<PendingEntry> {
       ..writeByte(3)
       ..write(obj.value)
       ..writeByte(4)
-      ..write(obj.timestamp);
+      ..write(obj.timestamp)
+      ..writeByte(5)
+      ..write(obj.batchId)
+      ..writeByte(6)
+      ..write(obj.sourceTranscript)
+      ..writeByte(7)
+      ..write(obj.isReviewed);
   }
 
   @override

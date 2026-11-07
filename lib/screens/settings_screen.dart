@@ -15,6 +15,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late TextEditingController _urlController;
   bool _isTesting = false;
+  bool _isFetchingConfig = false;
 
   @override
   void initState() {
@@ -78,6 +79,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _fetchConfig() async {
+    final entryProvider = Provider.of<EntryProvider>(context, listen: false);
+    final l10n = AppLocalizations.of(context)!;
+
+    setState(() {
+      _isFetchingConfig = true;
+    });
+
+    try {
+      await entryProvider.fetchAndSaveConfig();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.configUpdateSuccess),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on ApiException catch (error) {
+      if (mounted) _showErrorSnackBar(error.message);
+    } catch (error) {
+      if (mounted) _showErrorSnackBar(l10n.configUpdateError);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFetchingConfig = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -127,6 +159,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: _isFetchingConfig ? null : _fetchConfig,
+                icon: _isFetchingConfig
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.refresh),
+                label: Text(l10n.configUpdateButton),
+              ),
+            ),
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               height: 50,

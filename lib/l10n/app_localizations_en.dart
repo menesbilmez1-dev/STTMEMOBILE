@@ -52,13 +52,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get serverConnectionDesc =>
-      'Enter the Command Center server address here (e.g., http://192.168.1.100:5000)';
+      'Enter the Command Center server address here (e.g., http://192.168.1.100:8080)';
 
   @override
   String get serverUrlLabel => 'Server URL';
 
   @override
-  String get serverUrlHint => 'http://192.168.1.100:5000';
+  String get serverUrlHint => 'http://192.168.1.100:8080';
 
   @override
   String get testAndSaveButton => 'Test and Save Connection';
@@ -90,6 +90,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get configUpdateError =>
       'An error occurred while updating configuration.';
+
+  @override
+  String get configUpdateButton => 'Fetch Configuration';
 
   @override
   String get noEntriesFound => 'No pending entries found.';
@@ -147,4 +150,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allowedTypesLabel => 'Allowed Types:';
+
+  @override
+  String get reviewSpeechDraft => 'Review speech draft';
+
+  @override
+  String get addCommand => 'Add command';
+
+  @override
+  String get removeCommand => 'Remove command';
+
+  @override
+  String get saveReviewedBatch => 'Save reviewed batch';
+
+  @override
+  String get transcriptLabel => 'Recognized speech';
+
+  @override
+  String get unparsedTranscript =>
+      'No commands were recognized. Correct or add commands before saving.';
+
+  @override
+  String get mustHaveTwoCommands =>
+      'A speech record must contain at least two commands.';
+
+  @override
+  String get invalidCommandBatch =>
+      'Commands must use configured category/type pairs, have values, and target different columns.';
+
+  @override
+  String get reviewSaveError =>
+      'The reviewed draft could not be saved. Please try again.';
+
+  @override
+  String get awaitingReview => 'Needs review';
+
+  @override
+  String get draftSaved => 'Speech saved as a draft. Review it before syncing.';
+
+  @override
+  String get syncCompletedWithDrafts =>
+      'Approved entries synced. Speech drafts still need review.';
+
+  @override
+  String get emptyCategoryLabel => '(No category)';
 }

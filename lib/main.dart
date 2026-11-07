@@ -15,7 +15,7 @@ import 'package:stt_merve/widgets/entry_editor_sheet.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   await init();
 
   runApp(
@@ -37,7 +37,7 @@ void main() async {
         ),
       ],
       child: const MyApp(),
-    )
+    ),
   );
 }
 
@@ -92,41 +92,37 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  void _onSpeechStatusChanged() {
+  Future<void> _onSpeechStatusChanged() async {
     final speechService = context.read<SpeechService>();
     final entryProvider = context.read<EntryProvider>();
     final parserService = context.read<SpeechParserService>();
 
-    // Check if status changed from listening to idle
-    if (_previousStatus == SpeechStatus.listening && speechService.status == SpeechStatus.idle) {
-      final words = speechService.lastWords.trim();
-      final config = entryProvider.config;
-
-      // Ignore if no words were spoken or it's just the default instruction
-      if (words.isEmpty || words.contains('Konuşmaya başlamak için butona basın...')) {
-        _previousStatus = speechService.status;
-        return;
-      }
-
-      if (config != null) {
-        final result = parserService.parse(words, config);
-        if (result != null) {
-          entryProvider.addEntryWithDetails(
-            value: result.value,
-            category: result.category,
-            type: result.type,
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Could not parse: $words"),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      }
-    }
+    final previousStatus = _previousStatus;
     _previousStatus = speechService.status;
+    if (previousStatus != SpeechStatus.listening ||
+        speechService.status != SpeechStatus.idle) {
+      return;
+    }
+
+    final words = speechService.lastWords.trim();
+    if (words.isEmpty ||
+        words.contains('Konuşmaya başlamak için butona basın...')) {
+      return;
+    }
+
+    final commands = entryProvider.config == null
+        ? const <ParsedResult>[]
+        : parserService.parse(words, entryProvider.config!);
+    try {
+      await entryProvider.addSpeechDraft(words, commands);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.draftSaved)),
+        );
+      }
+    } catch (error) {
+      debugPrint('Failed to save speech draft: $error');
+    }
   }
 
   @override
@@ -148,10 +144,7 @@ class _MyHomePageState extends State<MyHomePage> {
             padding: const EdgeInsets.all(16),
             child: Text(
               speechService.lastWords,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w400,
-              ),
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w400),
               textAlign: TextAlign.center,
             ),
           ),
@@ -163,7 +156,6 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
     );
-
 
     if (speechService.status == SpeechStatus.permissionDenied) {
       content = Center(
@@ -210,17 +202,12 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             const Icon(Icons.error_outline, size: 64, color: Colors.orange),
             const SizedBox(height: 16),
-            Text(
-              l10n.genericError,
-              style: const TextStyle(fontSize: 20),
-            ),
+            Text(l10n.genericError, style: const TextStyle(fontSize: 20)),
           ],
         ),
       );
     } else if (speechService.status == SpeechStatus.initializing) {
-      content = const Center(
-        child: CircularProgressIndicator(),
-      );
+      content = const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
@@ -245,14 +232,17 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       body: content,
-      floatingActionButton: speechService.status == SpeechStatus.permissionDenied
+      floatingActionButton:
+          speechService.status == SpeechStatus.permissionDenied
           ? null
           : FloatingActionButton(
               onPressed: speechService.isListening
                   ? () => speechService.stopListening()
                   : () => speechService.startListening(),
               tooltip: speechService.isListening ? l10n.stop : l10n.talk,
-              child: Icon(speechService.isListening ? Icons.mic_off : Icons.mic),
+              child: Icon(
+                speechService.isListening ? Icons.mic_off : Icons.mic,
+              ),
             ),
     );
   }
@@ -265,4 +255,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-

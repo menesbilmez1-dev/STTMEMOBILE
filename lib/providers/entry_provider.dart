@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../models/pending_entry.dart';
 import '../models/app_config.dart';
 import '../services/database_service.dart';
 import '../services/api_service.dart';
 import '../services/haptic_service.dart';
+import '../services/speech_parser_service.dart';
+
+import 'package:uuid/uuid.dart';
 
 class EntryProvider with ChangeNotifier {
   final DatabaseService _dbService;
@@ -42,6 +46,7 @@ class EntryProvider with ChangeNotifier {
 
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
+  bool get hasUnreviewedEntries => _entries.any((entry) => !entry.isReviewed);
 
   String get serverUrl => _apiService.baseUrl;
 
@@ -56,16 +61,129 @@ class EntryProvider with ChangeNotifier {
     required String category,
     required String type,
   }) async {
+    final id = const Uuid().v4();
     final entry = PendingEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: id,
       category: category,
       type: type,
       value: value,
       timestamp: DateTime.now(),
+      batchId: id,
     );
     await _dbService.addEntry(entry);
     _entries = _dbService.getAllEntries();
     _hapticService.success();
+    notifyListeners();
+  }
+
+  Future<void> addSpeechDraft(
+    String transcript,
+    List<ParsedResult> parsedCommands,
+  ) async {
+    final batchId = const Uuid().v4();
+    final timestamp = DateTime.now();
+    final commands = parsedCommands.isEmpty
+        ? [ParsedResult(category: '', type: '', value: '')]
+        : parsedCommands;
+    final entries = [
+      for (final command in commands)
+        PendingEntry(
+          id: const Uuid().v4(),
+          category: command.category,
+          type: command.type,
+          value: command.value,
+          timestamp: timestamp,
+          batchId: batchId,
+          sourceTranscript: transcript,
+          isReviewed: false,
+        ),
+    ];
+
+    for (final entry in entries) {
+      await _dbService.addEntry(entry);
+    }
+    _entries = _dbService.getAllEntries();
+    notifyListeners();
+  }
+
+  Future<void> reviewBatch(
+    String batchId,
+    List<PendingEntry> reviewedEntries,
+  ) async {
+    if (reviewedEntries.length < 2) {
+      throw ArgumentError('A voice batch must contain at least two commands.');
+    }
+    if (reviewedEntries.any(
+      (entry) =>
+          entry.type.trim().isEmpty ||
+          entry.value.trim().isEmpty ||
+          !_configHasCategoryType(entry.category, entry.type),
+    )) {
+      throw ArgumentError(
+        'Every command must match a configured category/type and have a value.',
+      );
+    }
+
+    final uniqueColumns = <String>{};
+    for (final entry in reviewedEntries) {
+      final key =
+          '${entry.category.trim().toLowerCase()}|${entry.type.trim().toLowerCase()}';
+      if (!uniqueColumns.add(key)) {
+        throw ArgumentError(
+          'A batch cannot contain duplicate category/type pairs.',
+        );
+      }
+    }
+
+    final existingEntries = _entries
+        .where((entry) => entry.batchId == batchId)
+        .toList();
+    final now = DateTime.now();
+    for (var index = 0; index < reviewedEntries.length; index++) {
+      final updated = reviewedEntries[index]
+        ..batchId = batchId
+        ..isReviewed = true
+        ..sourceTranscript = existingEntries.isEmpty
+            ? reviewedEntries[index].sourceTranscript
+            : existingEntries.first.sourceTranscript;
+      if (index < existingEntries.length) {
+        updated
+          ..id = existingEntries[index].id
+          ..timestamp = existingEntries[index].timestamp;
+        await _dbService.updateEntry(updated);
+      } else {
+        updated.timestamp = now;
+        await _dbService.addEntry(updated);
+      }
+    }
+    for (final removed in existingEntries.skip(reviewedEntries.length)) {
+      await _dbService.deleteEntry(removed);
+    }
+
+    _entries = _dbService.getAllEntries();
+    _hapticService.success();
+    notifyListeners();
+  }
+
+  bool _configHasCategoryType(String categoryName, String type) =>
+      _config?.categories.any(
+        (category) =>
+            category.name.trim().toLowerCase() ==
+                categoryName.trim().toLowerCase() &&
+            category.types.any(
+              (configuredType) =>
+                  configuredType.trim().toLowerCase() ==
+                  type.trim().toLowerCase(),
+            ),
+      ) ??
+      false;
+
+  Future<void> deleteBatch(String batchId) async {
+    final batch = _entries.where((entry) => entry.batchId == batchId).toList();
+    for (final entry in batch) {
+      await _dbService.deleteEntry(entry);
+    }
+    _entries = _dbService.getAllEntries();
     notifyListeners();
   }
 
@@ -84,25 +202,34 @@ class EntryProvider with ChangeNotifier {
   }
 
   Future<void> syncEntries() async {
-    if (_entries.isEmpty) return;
+    if (_isSyncing) return;
+    final reviewedEntries = _entries
+        .where((entry) => entry.isReviewed)
+        .toList();
+    if (reviewedEntries.isEmpty) return;
 
     _isSyncing = true;
     notifyListeners();
 
     try {
-      await _apiService.sendEntries(_entries);
-      
-      // Remove synced entries from local database
       final box = _dbService.pendingEntriesBox;
-      for (var entry in _entries) {
-        await box.delete(entry.key);
+      final batches = <String, List<PendingEntry>>{};
+      for (final entry in reviewedEntries) {
+        batches.putIfAbsent(entry.batchId, () => []).add(entry);
       }
-      _entries = _dbService.getAllEntries();
+
+      for (final batch in batches.entries) {
+        await _apiService.sendEntries(batch.value);
+        for (final entry in batch.value) {
+          await box.delete(entry.key);
+        }
+      }
       _hapticService.success();
     } catch (e) {
       _hapticService.error();
       rethrow;
     } finally {
+      _entries = _dbService.getAllEntries();
       _isSyncing = false;
       notifyListeners();
     }
@@ -110,14 +237,14 @@ class EntryProvider with ChangeNotifier {
 
   Future<void> fetchAndSaveConfig() async {
     final newConfig = await _apiService.fetchLatestConfig();
-    _dbService.updateConfig(newConfig);
+    await _dbService.updateConfig(newConfig);
     _config = newConfig;
     _hapticService.success();
     notifyListeners();
   }
 
-  void updateLocalConfig(AppConfig config) {
-    _dbService.updateConfig(config);
+  Future<void> updateLocalConfig(AppConfig config) async {
+    await _dbService.updateConfig(config);
     _config = config;
     _hapticService.selection();
     notifyListeners();
@@ -132,11 +259,10 @@ class EntryProvider with ChangeNotifier {
 
     // Test connection first using the NEW URL
     await _apiService.testConnection(newUrl);
-    
+
     _apiService.updateBaseUrl(newUrl);
     await _dbService.setServerUrl(newUrl);
     _hapticService.success();
     notifyListeners();
   }
 }
-

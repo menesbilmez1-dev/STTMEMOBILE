@@ -19,11 +19,23 @@ class PendingEntry extends HiveObject {
   @HiveField(4)
   DateTime timestamp;
 
+  @HiveField(5)
+  String batchId;
+
+  @HiveField(6, defaultValue: '')
+  String sourceTranscript;
+
+  @HiveField(7, defaultValue: true)
+  bool isReviewed;
+
   PendingEntry({
     required this.id,
     required this.category,
     required this.type,
     required this.value,
     required this.timestamp,
-  });
+    String? batchId,
+    this.sourceTranscript = '',
+    this.isReviewed = true,
+  }) : batchId = batchId ?? id;
 }

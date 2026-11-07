@@ -4,7 +4,14 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-enum SpeechStatus { idle, initializing, listening, error, permissionDenied, unavailable }
+enum SpeechStatus {
+  idle,
+  initializing,
+  listening,
+  error,
+  permissionDenied,
+  unavailable,
+}
 
 class SpeechService with ChangeNotifier {
   final SpeechToText _speechToText = SpeechToText();
@@ -21,7 +28,7 @@ class SpeechService with ChangeNotifier {
   /// Requests microphone permission
   Future<bool> requestMicrophonePermission() async {
     final status = await Permission.microphone.request();
-    
+
     if (status.isGranted) {
       _status = SpeechStatus.idle;
       notifyListeners();
@@ -86,7 +93,8 @@ class SpeechService with ChangeNotifier {
   /// Starts listening to the user
   Future<void> startListening() async {
     if (!_isSpeechEnabled) return;
-    
+
+    _lastWords = '';
     _status = SpeechStatus.listening;
     _isListening = true;
     notifyListeners();

@@ -52,13 +52,13 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get serverConnectionDesc =>
-      'Komut Merkezi sunucu adresini buraya girin (örn: http://192.168.1.100:5000)';
+      'Komut Merkezi sunucu adresini buraya girin (örn: http://192.168.1.100:8080)';
 
   @override
   String get serverUrlLabel => 'Sunucu URL';
 
   @override
-  String get serverUrlHint => 'http://192.168.1.100:5000';
+  String get serverUrlHint => 'http://192.168.1.100:8080';
 
   @override
   String get testAndSaveButton => 'Bağlantıyı Test Et ve Kaydet';
@@ -90,6 +90,9 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get configUpdateError =>
       'Konfigürasyon güncellenirken bir hata oluştu.';
+
+  @override
+  String get configUpdateButton => 'Konfigürasyonu Getir';
 
   @override
   String get noEntriesFound => 'Bekleyen kayıt bulunamadı.';
@@ -148,4 +151,49 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get allowedTypesLabel => 'İzin Verilen Türler:';
+
+  @override
+  String get reviewSpeechDraft => 'Ses taslağını incele';
+
+  @override
+  String get addCommand => 'Komut ekle';
+
+  @override
+  String get removeCommand => 'Komutu kaldır';
+
+  @override
+  String get saveReviewedBatch => 'İncelenen grubu kaydet';
+
+  @override
+  String get transcriptLabel => 'Algılanan konuşma';
+
+  @override
+  String get unparsedTranscript =>
+      'Komut algılanamadı. Kaydetmeden önce komutları düzeltin veya ekleyin.';
+
+  @override
+  String get mustHaveTwoCommands =>
+      'Bir ses kaydı en az iki komut içermelidir.';
+
+  @override
+  String get invalidCommandBatch =>
+      'Komutlar yapılandırılmış kategori/tür çiftlerini kullanmalı, değer içermeli ve farklı sütunlara yazılmalıdır.';
+
+  @override
+  String get reviewSaveError =>
+      'İncelenen taslak kaydedilemedi. Lütfen tekrar deneyin.';
+
+  @override
+  String get awaitingReview => 'İnceleme bekliyor';
+
+  @override
+  String get draftSaved =>
+      'Konuşma taslak olarak kaydedildi. Eşitlemeden önce inceleyin.';
+
+  @override
+  String get syncCompletedWithDrafts =>
+      'Onaylanan kayıtlar eşitlendi. Ses taslakları inceleme bekliyor.';
+
+  @override
+  String get emptyCategoryLabel => '(Kategori yok)';
 }

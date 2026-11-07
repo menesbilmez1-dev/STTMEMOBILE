@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/entry_provider.dart';
 import '../models/app_config.dart';
 import '../l10n/app_localizations.dart';
@@ -19,9 +20,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.currentConfigurationTitle),
-      ),
+      appBar: AppBar(title: Text(l10n.currentConfigurationTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -41,7 +40,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
               children: [
                 Text(
                   l10n.categoriesAndTypesTitle,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 if (config != null)
                   IconButton(
@@ -66,6 +68,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
       ),
     );
   }
+
   Widget _buildCategoriesList(EntryProvider entryProvider, AppConfig config) {
     return ListView.builder(
       shrinkWrap: true,
@@ -88,7 +91,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
                         category.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -103,7 +109,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       runSpacing: 4,
                       children: category.types.map((type) {
                         return Chip(
-                          label: Text(type, style: const TextStyle(fontSize: 12)),
+                          label: Text(
+                            type,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           backgroundColor: Colors.blue.shade50,
                           padding: EdgeInsets.zero,
                         );
@@ -141,16 +150,20 @@ class _ConfigScreenState extends State<ConfigScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               if (nameController.text.trim().isNotEmpty) {
                 final newCategory = CategoryConfig(
                   name: nameController.text.trim(),
                   types: [],
                 );
                 final currentConfig = entryProvider.config!;
-                final updatedCategories = List<CategoryConfig>.from(currentConfig.categories)
-                  ..add(newCategory);
-                entryProvider.updateLocalConfig(AppConfig(categories: updatedCategories));
+                final updatedCategories = List<CategoryConfig>.from(
+                  currentConfig.categories,
+                )..add(newCategory);
+                await entryProvider.updateLocalConfig(
+                  AppConfig(categories: updatedCategories),
+                );
+                if (!context.mounted) return;
                 Navigator.pop(context);
               }
             },
@@ -160,7 +173,6 @@ class _ConfigScreenState extends State<ConfigScreen> {
       ),
     );
   }
-
 
   void _deleteCategory(EntryProvider entryProvider, CategoryConfig category) {
     showDialog(
@@ -174,10 +186,15 @@ class _ConfigScreenState extends State<ConfigScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               final currentConfig = entryProvider.config!;
-              final updatedCategories = currentConfig.categories.where((c) => c != category).toList();
-              entryProvider.updateLocalConfig(AppConfig(categories: updatedCategories));
+              final updatedCategories = currentConfig.categories
+                  .where((c) => c != category)
+                  .toList();
+              await entryProvider.updateLocalConfig(
+                AppConfig(categories: updatedCategories),
+              );
+              if (!context.mounted) return;
               Navigator.pop(context);
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
@@ -204,17 +221,23 @@ class _ConfigScreenState extends State<ConfigScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               final trimmedName = nameController.text.trim();
               if (trimmedName.isNotEmpty) {
                 final currentConfig = entryProvider.config!;
                 final updatedCategories = currentConfig.categories.map((c) {
                   if (c == category) {
-                    return CategoryConfig(name: trimmedName, types: List.from(c.types));
+                    return CategoryConfig(
+                      name: trimmedName,
+                      types: List.from(c.types),
+                    );
                   }
                   return c;
                 }).toList();
-                entryProvider.updateLocalConfig(AppConfig(categories: updatedCategories));
+                await entryProvider.updateLocalConfig(
+                  AppConfig(categories: updatedCategories),
+                );
+                if (!context.mounted) return;
                 Navigator.pop(context);
               }
             },
@@ -261,9 +284,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       labelText: 'New Type',
                       suffixIcon: IconButton(
                         icon: const Icon(Icons.add),
-                        onPressed: () {
+                        onPressed: () async {
                           final trimmedValue = typesController.text.trim();
-                          if (trimmedValue.isNotEmpty && !currentTypes.contains(trimmedValue)) {
+                          if (trimmedValue.isNotEmpty &&
+                              !currentTypes.contains(trimmedValue)) {
                             setDialogState(() {
                               currentTypes.add(trimmedValue);
                               typesController.clear();
@@ -274,7 +298,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     ),
                     onSubmitted: (value) {
                       final trimmedValue = value.trim();
-                      if (trimmedValue.isNotEmpty && !currentTypes.contains(trimmedValue)) {
+                      if (trimmedValue.isNotEmpty &&
+                          !currentTypes.contains(trimmedValue)) {
                         setDialogState(() {
                           currentTypes.add(trimmedValue);
                           typesController.clear();
@@ -291,15 +316,21 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   final currentConfig = entryProvider.config!;
                   final updatedCategories = currentConfig.categories.map((c) {
                     if (c == category) {
-                      return CategoryConfig(name: c.name, types: List.from(currentTypes));
+                      return CategoryConfig(
+                        name: c.name,
+                        types: List.from(currentTypes),
+                      );
                     }
                     return c;
                   }).toList();
-                  entryProvider.updateLocalConfig(AppConfig(categories: updatedCategories));
+                  await entryProvider.updateLocalConfig(
+                    AppConfig(categories: updatedCategories),
+                  );
+                  if (!context.mounted) return;
                   Navigator.pop(context);
                 },
                 child: const Text('Save'),
@@ -310,5 +341,4 @@ class _ConfigScreenState extends State<ConfigScreen> {
       ),
     );
   }
-
 }
